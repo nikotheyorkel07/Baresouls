@@ -1,0 +1,144 @@
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { ArrowLeft, Mail, BookOpen, HelpCircle, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+const faqs = [
+  {
+    question: "How do I use the Find a Soul feature?",
+    answer: "Click on 'Find a Soul' from the home page to be matched with someone for an 8-minute anonymous chat. If you connect well, you can add them as a friend to continue chatting!"
+  },
+  {
+    question: "Are my reflections private?",
+    answer: "Yes! All your mood entries and journal reflections are completely private and only visible to you."
+  },
+  {
+    question: "How does the AI Companion (Luna) work?",
+    answer: "Luna is an emotionally intelligent AI companion trained to listen, understand, and support you through your wellness journey. Chat with Luna anytime you need someone to talk to."
+  },
+  {
+    question: "Can I delete my account and data?",
+    answer: "Yes, you can export your data from the Profile section and contact us to delete your account."
+  },
+  {
+    question: "Is BareSouls free to use?",
+    answer: "Yes! BareSouls is completely free. We believe mental wellness support should be accessible to everyone."
+  },
+  {
+    question: "What if I'm in crisis?",
+    answer: "Please use the Emergency Support section in your Profile to immediately call the crisis hotline or email for support. For immediate danger, please call local emergency services."
+  }
+];
+
+export default function HelpSupport() {
+  const [showUserGuide, setShowUserGuide] = useState(false);
+  const navigate = useNavigate();
+
+  const handleEmailSupport = () => {
+    window.location.href = 'mailto:rescuebaresouls@outlook.com?subject=Support Request';
+  };
+
+  return (
+    <div className="min-h-screen p-4 sm:p-6 pt-6 sm:pt-8">
+      <div className="max-w-lg mx-auto space-y-4 sm:space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(createPageUrl("Profile"))}
+            className="rounded-full"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
+            Help & Support
+          </h1>
+        </div>
+
+        {/* Email Support */}
+        <Card className="glass-card rounded-3xl p-4 sm:p-6">
+          <button
+            onClick={handleEmailSupport}
+            className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white/20 rounded-2xl hover:bg-white/30 transition-colors"
+          >
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+              <Mail className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+            </div>
+            <div className="text-left flex-1">
+              <p className="font-semibold text-gray-900 text-sm sm:text-base">Email Support</p>
+              <p className="text-xs sm:text-sm text-gray-600">Get help from our team</p>
+            </div>
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 rotate-180" />
+          </button>
+        </Card>
+
+        {/* User Guide - Collapsible */}
+        <Card className="glass-card rounded-3xl overflow-hidden">
+          <button
+            onClick={() => setShowUserGuide(!showUserGuide)}
+            className="w-full p-4 sm:p-6 flex items-center justify-between hover:bg-white/10 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900">User Guide</h2>
+            </div>
+            <ChevronDown 
+              className={`w-5 h-5 text-gray-600 transition-transform duration-300 ${
+                showUserGuide ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+          
+          {showUserGuide && (
+            <div className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-3 sm:space-y-4 text-xs sm:text-sm text-gray-700 animate-in slide-in-from-top duration-300">
+              <div>
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">🏠 Home Feed</h3>
+                <p className="leading-relaxed">Stay connected with the community through anonymous posts. Share your thoughts, offer support, and celebrate milestones together.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">💬 Chat</h3>
+                <p className="leading-relaxed">Talk to Luna (AI Companion) anytime, or chat with your soul connections (friends you've added from matches).</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">🌙 Reflect</h3>
+                <p className="leading-relaxed">Track your emotions with the mood slider, write journal entries, and monitor your emotional wellness over time.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">👥 Find a Soul</h3>
+                <p className="leading-relaxed">Get matched with someone for an 8-minute anonymous chat. Add them as a friend to continue talking beyond the time limit.</p>
+              </div>
+              <div>
+                <h3 className="font-semibold mb-1 sm:mb-2 text-sm sm:text-base">🎨 Themes</h3>
+                <p className="leading-relaxed">Customize your experience with different color themes and dark mode toggle in Theme & Appearance settings.</p>
+              </div>
+            </div>
+          )}
+        </Card>
+
+        {/* FAQs */}
+        <Card className="glass-card rounded-3xl p-4 sm:p-6">
+          <div className="flex items-center gap-3 mb-3 sm:mb-4">
+            <HelpCircle className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" />
+            <h2 className="text-base sm:text-lg font-semibold text-gray-900">Frequently Asked Questions</h2>
+          </div>
+          <div className="space-y-3 sm:space-y-4">
+            {faqs.map((faq, index) => (
+              <details key={index} className="group">
+                <summary className="cursor-pointer font-medium text-gray-900 list-none flex items-center justify-between p-3 bg-white/20 rounded-xl hover:bg-white/30 transition-all text-sm sm:text-base">
+                  <span className="pr-2">{faq.question}</span>
+                  <ChevronDown className="w-4 h-4 text-gray-400 group-open:rotate-180 transition-transform flex-shrink-0" />
+                </summary>
+                <p className="mt-2 sm:mt-3 text-xs sm:text-sm text-gray-700 leading-relaxed pl-3 animate-in slide-in-from-top duration-200">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}

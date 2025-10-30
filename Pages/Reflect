@@ -1,0 +1,149 @@
+
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Plus, Sparkles, SlidersHorizontal } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import JournalEntries from "../components/reflect/JournalEntries";
+import NewEntryModal from "../components/reflect/NewEntryModal";
+
+export default function Reflect() {
+  const [showNewEntry, setShowNewEntry] = useState(false);
+  const [sortBy, setSortBy] = useState("-created_date"); // Added sortBy state
+  const queryClient = useQueryClient();
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: moodEntries, isLoading } = useQuery({
+    queryKey: ['moodEntries', sortBy], // Updated queryKey to include sortBy
+    queryFn: () => base44.entities.MoodEntry.list(sortBy), // Updated queryFn to use sortBy
+    initialData: [],
+  });
+
+  const createEntryMutation = useMutation({
+    mutationFn: (entryData) => base44.entities.MoodEntry.create(entryData),
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['moodEntries'] });
+      
+      // Update user reflection count
+      const currentCount = user?.reflections_count || 0;
+      await base44.auth.updateMe({ reflections_count: currentCount + 1 });
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      
+      setShowNewEntry(false);
+      // setSelectedMood(null); // Removed as MoodSelector is removed
+    },
+  });
+
+  const handleCreateEntry = async (entryData) => {
+    await createEntryMutation.mutateAsync(entryData);
+  };
+
+  return (
+    <div className="min-h-screen p-6 pt-8">
+      <div className="max-w-lg mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-3">
+          <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center animate-float">
+            <Sparkles className="w-8 h-8 text-white" />
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">
+            Reflection Space
+          </h1>
+          <p className="text-gray-600">
+            Track your emotions and thoughts
+          </p>
+        </div>
+
+        {/* Mood Selector - Removed */}
+        {/* <MoodSelector 
+          selectedMood={selectedMood}
+          onMoodSelect={(mood) => {
+            setSelectedMood(mood);
+            setShowNewEntry(true);
+          }}
+        /> */}
+
+        {/* New Entry Button */}
+        <Button
+          onClick={() => setShowNewEntry(true)}
+          className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-6 rounded-3xl text-lg font-semibold hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+        >
+          <Plus className="w-6 h-6 mr-2" />
+          New Reflection
+        </Button>
+
+        {/* Stats */}
+        <div className="glass-card rounded-3xl p-6">
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div>
+              <div className="text-3xl font-bold text-gray-900">
+                {moodEntries.length}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">Total</p>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-gray-900">
+                {moodEntries.filter(e => {
+                  const date = new Date(e.created_date);
+                  const weekAgo = new Date();
+                  weekAgo.setDate(weekAgo.getDate() - 7);
+                  return date >= weekAgo;
+                }).length}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">This Week</p>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-gray-900">
+                {new Set(moodEntries.map(e => new Date(e.created_date).toDateString())).size}
+              </div>
+              <p className="text-sm text-gray-600 mt-1">Days Tracked</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Sort Controls - Added */}
+        <div className="flex items-center justify-between glass-card rounded-2xl p-4">
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="w-4 h-4 text-gray-600" />
+            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+          </div>
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-40 bg-white/50">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="-created_date">Newest First</SelectItem>
+              <SelectItem value="created_date">Oldest First</SelectItem>
+              <SelectItem value="-intensity">Highest Intensity</SelectItem>
+              <SelectItem value="intensity">Lowest Intensity</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Journal Entries */}
+        <JournalEntries entries={moodEntries} isLoading={isLoading} />
+      </div>
+
+      <NewEntryModal
+        isOpen={showNewEntry}
+        onClose={() => {
+          setShowNewEntry(false);
+          // setSelectedMood(null); // Removed as MoodSelector is removed
+        }}
+        onSave={handleCreateEntry}
+        // initialMood={selectedMood} // Removed as MoodSelector is removed
+      />
+    </div>
+  );
+}

@@ -1,0 +1,44 @@
+{
+  "name": "MatchQueue",
+  "type": "object",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "User currently looking for a match"
+    },
+    "user_name": {
+      "type": "string",
+      "description": "User's display name"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "waiting",
+        "matched",
+        "cancelled"
+      ],
+      "default": "waiting",
+      "description": "Current status in queue"
+    },
+    "matched_with": {
+      "type": "string",
+      "description": "ID of user matched with (if matched)"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When this queue entry expires"
+    }
+  },
+  "required": [
+    "user_id",
+    "user_name",
+    "expires_at"
+  ],
+  "rls": {
+    "create": {},
+    "read": {},
+    "update": {},
+    "delete": {}
+  }
+}

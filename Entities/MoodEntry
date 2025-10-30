@@ -1,0 +1,74 @@
+{
+  "name": "MoodEntry",
+  "type": "object",
+  "properties": {
+    "mood": {
+      "type": "string",
+      "description": "Primary emotion"
+    },
+    "mood_value": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 9,
+      "description": "Mood slider value (0-9)"
+    },
+    "intensity": {
+      "type": "number",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "Emotional intensity level"
+    },
+    "title": {
+      "type": "string",
+      "description": "Entry title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Journal entry content"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Tags for categorizing entries"
+    },
+    "gratitude": {
+      "type": "string",
+      "description": "Something to be grateful for"
+    },
+    "reflection_type": {
+      "type": "string",
+      "enum": [
+        "daily_check_in",
+        "deep_reflection",
+        "quick_note",
+        "gratitude",
+        "breakthrough"
+      ],
+      "default": "daily_check_in"
+    },
+    "is_saved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this entry is saved/favorited"
+    }
+  },
+  "required": [
+    "mood"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

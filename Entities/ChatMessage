@@ -1,0 +1,66 @@
+{
+  "name": "ChatMessage",
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Message content"
+    },
+    "sender": {
+      "type": "string",
+      "enum": [
+        "user",
+        "ai"
+      ],
+      "description": "Who sent the message"
+    },
+    "sentiment": {
+      "type": "string",
+      "enum": [
+        "positive",
+        "neutral",
+        "negative",
+        "supportive",
+        "concerned"
+      ],
+      "description": "Emotional tone of message"
+    },
+    "has_attachment": {
+      "type": "boolean",
+      "default": false
+    },
+    "attachment_type": {
+      "type": "string",
+      "enum": [
+        "affirmation",
+        "breathing",
+        "audio",
+        "grounding"
+      ],
+      "description": "Type of wellness resource attached"
+    },
+    "is_saved": {
+      "type": "boolean",
+      "default": false,
+      "description": "Saved as important reflection"
+    }
+  },
+  "required": [
+    "content",
+    "sender"
+  ],
+  "rls": {
+    "create": {
+      "created_by": "{{user.email}}"
+    },
+    "read": {
+      "created_by": "{{user.email}}"
+    },
+    "update": {
+      "created_by": "{{user.email}}"
+    },
+    "delete": {
+      "created_by": "{{user.email}}"
+    }
+  }
+}

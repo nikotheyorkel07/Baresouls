@@ -1,0 +1,78 @@
+import React, { useEffect } from "react";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+const avatarImages = [
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/dbb329c1b_1AVT.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/dc0a5aeb1_2.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/30a5b502c_3.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/763606f97_4.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/b51197a3c_5.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/73ae471bf_6.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/1568f86ed_7.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/b00be6c64_8.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/4222ad097_9.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/ea5555e77_10.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/def293311_11.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/52d9b0afa_12.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/c8240d823_13.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/d08e43d04_14.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/c82821dad_15.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/aae3bd138_16.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/46b03ec98_17.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/b3031f4f2_18.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/2bac8cc90_19.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/4a43b7d63_20.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/29ffbe3b3_21.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/460f66ebf_22.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/8c354e885_23.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/80eb8a1ce_Layer3.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/d65dad141_25.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/316038285_26.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/76b6ddb0a_27.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/cb4261fe1_28.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/192c19bd3_29.png",
+  "https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/68f362645ea5ff7378559a98/fcebabf63_30.png"
+];
+
+export default function AvatarDisplay({ user, size = "large", onAvatarClick }) {
+  const queryClient = useQueryClient();
+
+  const assignAvatarMutation = useMutation({
+    mutationFn: (avatarId) => base44.auth.updateMe({ avatar_id: avatarId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+
+  useEffect(() => {
+    if (user && !user.avatar_id) {
+      const randomId = Math.floor(Math.random() * 30) + 1;
+      assignAvatarMutation.mutate(randomId);
+    }
+  }, [user?.avatar_id]);
+
+  const avatarUrl = user?.avatar_id ? avatarImages[user.avatar_id - 1] : avatarImages[0];
+
+  const sizeClasses = {
+    small: "w-10 h-10",
+    medium: "w-16 h-16",
+    large: "w-24 h-24",
+    xlarge: "w-32 h-32"
+  };
+
+  return (
+    <div 
+      className={`${sizeClasses[size]} rounded-full bg-white p-2 shadow-lg ${onAvatarClick ? 'cursor-pointer hover:scale-105 transition-transform' : ''}`}
+      onClick={onAvatarClick}
+    >
+      <img 
+        src={avatarUrl} 
+        alt="Avatar" 
+        className="w-full h-full object-contain"
+      />
+    </div>
+  );
+}
+
+export { avatarImages };

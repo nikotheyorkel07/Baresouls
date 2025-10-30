@@ -1,0 +1,43 @@
+import React from "react";
+
+const moods = [
+  { id: 'joyful', emoji: '😊', label: 'Joyful', color: 'from-yellow-400 to-orange-400' },
+  { id: 'peaceful', emoji: '😌', label: 'Peaceful', color: 'from-green-400 to-teal-400' },
+  { id: 'grateful', emoji: '🙏', label: 'Grateful', color: 'from-pink-400 to-rose-400' },
+  { id: 'hopeful', emoji: '✨', label: 'Hopeful', color: 'from-purple-400 to-pink-400' },
+  { id: 'anxious', emoji: '😰', label: 'Anxious', color: 'from-orange-400 to-red-400' },
+  { id: 'sad', emoji: '😢', label: 'Sad', color: 'from-blue-400 to-indigo-400' },
+  { id: 'frustrated', emoji: '😤', label: 'Frustrated', color: 'from-red-400 to-pink-400' },
+  { id: 'lonely', emoji: '💭', label: 'Lonely', color: 'from-gray-400 to-blue-400' },
+];
+
+export default function MoodSelector({ selectedMood, onMoodSelect }) {
+  return (
+    <div className="glass-card rounded-3xl p-6">
+      <h2 className="text-xl font-bold text-gray-900 mb-4">
+        How are you feeling?
+      </h2>
+      
+      <div className="grid grid-cols-4 gap-3">
+        {moods.map((mood) => (
+          <button
+            key={mood.id}
+            onClick={() => onMoodSelect(mood.id)}
+            className={`flex flex-col items-center gap-2 p-3 rounded-2xl transition-all duration-300 hover:scale-110 ${
+              selectedMood === mood.id
+                ? `bg-gradient-to-br ${mood.color} shadow-lg`
+                : 'bg-white/30 hover:bg-white/50'
+            }`}
+          >
+            <span className="text-3xl">{mood.emoji}</span>
+            <span className={`text-xs font-medium ${
+              selectedMood === mood.id ? 'text-white' : 'text-gray-700'
+            }`}>
+              {mood.label}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

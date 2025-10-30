@@ -1,0 +1,59 @@
+import React from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { avatarImages } from "./AvatarDisplay";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+
+export default function AvatarSelector({ isOpen, onClose, currentAvatarId }) {
+  const queryClient = useQueryClient();
+
+  const updateAvatarMutation = useMutation({
+    mutationFn: (avatarId) => base44.auth.updateMe({ avatar_id: avatarId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+      onClose();
+    },
+  });
+
+  const handleAvatarSelect = (avatarId) => {
+    updateAvatarMutation.mutate(avatarId);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="glass-card border-2 border-white/30 max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-2xl text-center">Choose Your Avatar</DialogTitle>
+        </DialogHeader>
+
+        <div className="grid grid-cols-4 sm:grid-cols-5 gap-4 py-4">
+          {avatarImages.map((url, index) => {
+            const avatarId = index + 1;
+            const isSelected = currentAvatarId === avatarId;
+            
+            return (
+              <button
+                key={avatarId}
+                onClick={() => handleAvatarSelect(avatarId)}
+                className={`aspect-square rounded-2xl bg-white p-3 transition-all duration-300 hover:scale-110 ${
+                  isSelected ? 'ring-4 ring-purple-500 scale-105' : 'hover:ring-2 hover:ring-purple-300'
+                }`}
+              >
+                <img 
+                  src={url} 
+                  alt={`Avatar ${avatarId}`}
+                  className="w-full h-full object-contain"
+                />
+              </button>
+            );
+          })}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

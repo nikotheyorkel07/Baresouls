@@ -1,0 +1,48 @@
+{
+  "name": "Affirmation",
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Affirmation text"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "self_love",
+        "strength",
+        "peace",
+        "growth",
+        "gratitude",
+        "courage"
+      ],
+      "description": "Affirmation category"
+    },
+    "is_favorite": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "text",
+    "category"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {},
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

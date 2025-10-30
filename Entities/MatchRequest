@@ -1,0 +1,77 @@
+{
+  "name": "MatchRequest",
+  "type": "object",
+  "properties": {
+    "requester_id": {
+      "type": "string",
+      "description": "User who initiated the match"
+    },
+    "requester_name": {
+      "type": "string"
+    },
+    "receiver_id": {
+      "type": "string",
+      "description": "User who received the match request"
+    },
+    "receiver_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "rejected",
+        "expired"
+      ],
+      "default": "accepted"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the match expires (8 minutes after acceptance)"
+    },
+    "is_friends": {
+      "type": "boolean",
+      "default": false,
+      "description": "If users became friends"
+    }
+  },
+  "required": [
+    "requester_id",
+    "receiver_id"
+  ],
+  "rls": {
+    "create": {},
+    "read": {
+      "$or": [
+        {
+          "requester_id": "{{user.id}}"
+        },
+        {
+          "receiver_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "requester_id": "{{user.id}}"
+        },
+        {
+          "receiver_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "requester_id": "{{user.id}}"
+        },
+        {
+          "receiver_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,230 @@
+import React from "react";import React from "react";
+
+import { supabase } from "../lib/supabase";import { base44 } from "../lib/supabase";
+
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+import { Button } from "../components/ui/button";import { Button } from "../components/ui/button";
+
+import { Card } from "../components/ui/card";import { Card } from "../components/ui/card";
+
+import { Switch } from "../components/ui/switch";import { Switch } from "../components/ui/switch";
+
+import { ArrowLeft, Moon, Sun } from "lucide-react";import { ArrowLeft, Check, Moon, Sun } from "lucide-react";
+
+import { useNavigate } from "react-router-dom";import { useNavigate } from "react-router-dom";
+
+import { createPageUrl } from "../utils/utils";import { createPageUrl } from "../utils/utils";
+
+
+
+interface Theme {interface Theme {
+
+  id: string;  id: string;
+
+  name: string;  name: string;
+
+  gradient: string;  gradient: string;
+
+  icon: string;  icon: string;
+
+}}
+
+
+
+interface User {interface User {
+
+  wellness_theme?: string;  wellness_theme?: string;
+
+  is_dark_mode?: boolean;  is_dark_mode?: boolean;
+
+}}
+
+
+
+export default function ThemeSettings() {const themes: Theme[] = [
+
+  const navigate = useNavigate();  { id: 'lavender_calm', name: 'Lavender Calm', gradient: 'from-[#E8E6FF] via-[#FCE6E9] to-[#DAD4F6]', icon: '🌸' },
+
+  const queryClient = useQueryClient();  { id: 'ocean_serenity', name: 'Ocean Serenity', gradient: 'from-[#56CFE1] via-[#B8F2E6] to-[#AED9E0]', icon: '🌊' },
+
+  { id: 'sunset_warmth', name: 'Sunset Warmth', gradient: 'from-[#FFD97D] via-[#FBE8E7] to-[#FFCFD2]', icon: '🌅' },
+
+  const { data: user, isLoading: userLoading } = useQuery<User>({  { id: 'forest_peace', name: 'Forest Peace', gradient: 'from-[#B5EAD7] via-[#C7CEEA] to-[#E2F0CB]', icon: '🌲' },
+
+    queryKey: ["user"],  { id: 'moonlight_dreams', name: 'Moonlight Dreams', gradient: 'from-[#8A4FFF] via-[#C8B6FF] to-[#E8E6FF]', icon: '🌙' },
+
+    queryFn: async () => {];
+
+      const { data: { user }, error } = await supabase.auth.getUser();
+
+      if (error) throw error;export default function ThemeSettings(): JSX.Element {
+
+      return user;  const navigate = useNavigate();
+
+    },  const queryClient = useQueryClient();
+
+  });
+
+  const { data: user } = useQuery<User>({
+
+  const { mutate: updateTheme } = useMutation({    queryKey: ['currentUser'],
+
+    mutationFn: async ({ theme, isDarkMode }: { theme?: string; isDarkMode?: boolean }) => {    queryFn: () => base44.auth.me(),
+
+      const { data, error } = await supabase.auth.updateUser({  });
+
+        data: {
+
+          wellness_theme: theme,  const updateThemeMutation = useMutation({
+
+          is_dark_mode: isDarkMode,    mutationFn: (themeData: Partial<User>) => base44.auth.updateMe(themeData),
+
+        },    onSuccess: () => {
+
+      });      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+
+      if (error) throw error;    },
+
+      return data;  });
+
+    },
+
+    onSuccess: () => {  const handleThemeSelect = async (themeId: string): Promise<void> => {
+
+      queryClient.invalidateQueries({ queryKey: ["user"] });    await updateThemeMutation.mutateAsync({ wellness_theme: themeId });
+
+    },  };
+
+  });
+
+  const handleDarkModeToggle = async (enabled: boolean): Promise<void> => {
+
+  const isDarkMode = user?.is_dark_mode ?? false;    await updateThemeMutation.mutateAsync({ is_dark_mode: enabled });
+
+  const currentTheme = user?.wellness_theme;  };
+
+
+
+  if (userLoading) {  const currentTheme = user?.wellness_theme || 'lavender_calm';
+
+    return <div>Loading...</div>;  const isDarkMode = user?.is_dark_mode || false;
+
+  }
+
+  return (
+
+  return (    <div className="min-h-screen p-6 pt-8">
+
+    <div className="min-h-screen p-6 pt-8">      <div className="max-w-lg mx-auto space-y-6">
+
+      <div className="max-w-lg mx-auto space-y-6">        {/* Header */}
+
+        {/* Header */}        <div className="flex items-center gap-4 mb-6">
+
+        <div className="flex items-center gap-4 mb-6">          <Button
+
+          <Button            variant="ghost"
+
+            variant="ghost"            size="icon"
+
+            size="icon"            onClick={() => navigate(createPageUrl("Profile"))}
+
+            onClick={() => navigate(createPageUrl("Profile"))}            className="rounded-full"
+
+            className="rounded-xl"          >
+
+          >            <ArrowLeft className="w-5 h-5" />
+
+            <ArrowLeft className="w-5 h-5" />          </Button>
+
+          </Button>          <h1 className="text-2xl font-bold text-gray-900">
+
+          <h1 className="text-2xl font-bold text-gray-900">            Theme & Appearance
+
+            Theme Settings          </h1>
+
+          </h1>        </div>
+
+        </div>
+
+        {/* Dark Mode Toggle */}
+
+        {/* Dark Mode Toggle */}        <Card className="glass-card rounded-3xl p-6">
+
+        <Card className="glass-card rounded-3xl p-6">          <div className="flex items-center justify-between">
+
+          <div className="flex items-center justify-between">            <div className="flex items-center gap-3">
+
+            <div className="flex items-center gap-3">              <div className={`w-12 h-12 rounded-xl ${isDarkMode ? 'bg-indigo-600' : 'bg-yellow-400'} flex items-center justify-center transition-colors`}>
+
+              <div className={`w-12 h-12 rounded-xl ${isDarkMode ? 'bg-indigo-600' : 'bg-yellow-400'} flex items-center justify-center transition-colors`}>                {isDarkMode ? <Moon className="w-6 h-6 text-white" /> : <Sun className="w-6 h-6 text-gray-900" />}
+
+                {isDarkMode ? <Moon className="w-6 h-6 text-white" /> : <Sun className="w-6 h-6 text-gray-900" />}              </div>
+
+              </div>              <div>
+
+              <div>                <p className="font-semibold text-gray-900">Dark Mode</p>
+
+                <p className="font-semibold text-gray-900">Dark Mode</p>                <p className="text-sm text-gray-600">
+
+                <p className="text-sm text-gray-600">                  {isDarkMode ? 'Currently enabled' : 'Currently disabled'}
+
+                  {isDarkMode ? 'Currently enabled' : 'Currently disabled'}                </p>
+
+                </p>              </div>
+
+              </div>            </div>
+
+            </div>            <Switch
+
+            <Switch              checked={isDarkMode}
+
+              checked={isDarkMode}              onCheckedChange={handleDarkModeToggle}
+
+              onCheckedChange={(checked) => updateTheme({ isDarkMode: checked })}            />
+
+            />          </div>
+
+          </div>        </Card>
+
+        </Card>
+
+      </div>        {/* Theme Selection */}
+
+    </div>        <div>
+
+  );          <h2 className="text-lg font-semibold text-gray-900 mb-4">Choose Your Theme</h2>
+
+}          <div className="grid gap-4">
+            {themes.map((theme) => {
+              const isSelected = currentTheme === theme.id;
+              
+              return (
+                <button
+                  key={theme.id}
+                  onClick={() => handleThemeSelect(theme.id)}
+                  className={`relative rounded-3xl overflow-hidden transition-all duration-300 ${
+                    isSelected ? 'ring-4 ring-purple-500 scale-[1.02]' : 'hover:scale-[1.01]'
+                  }`}
+                >
+                  <div className={`h-32 bg-gradient-to-br ${theme.gradient} flex items-center justify-center`}>
+                    <span className="text-6xl">{theme.icon}</span>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 glass-card p-4 flex items-center justify-between">
+                    <span className="font-semibold text-gray-900">{theme.name}</span>
+                    {isSelected && (
+                      <div className="w-6 h-6 rounded-full bg-purple-500 flex items-center justify-center">
+                        <Check className="w-4 h-4 text-white" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,205 @@
+
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Card } from "@/components/ui/card";
+import { Heart, Sparkles, User } from "lucide-react";
+import { format } from "date-fns";
+
+export default function CommunityPost({ post }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const categoryColors = {
+    encouragement: 'from-purple-400 to-pink-400',
+    gratitude: 'from-green-400 to-teal-400',
+    hope: 'from-yellow-400 to-orange-400',
+    vent: 'from-blue-400 to-indigo-400',
+    milestone: 'from-pink-400 to-rose-400',
+    question: 'from-teal-400 to-cyan-400',
+  };
+
+  const categoryEmojis = {
+    encouragement: '💪',
+    gratitude: '🙏',
+    hope: '✨',
+    vent: '💭',
+    milestone: '🎉',
+    question: '❓',
+  };
+
+  const updateReactionMutation = useMutation({
+    mutationFn: ({ postId, reactionType }) => {
+      const userId = currentUser?.id;
+      const likedBy = post.liked_by || [];
+      
+      // Check if user already liked
+      if (likedBy.includes(userId)) {
+        return Promise.reject(new Error('Already liked'));
+      }
+      
+      const currentReactions = post.reactions || { heart: 0, flower: 0, sparkle: 0, hug: 0 };
+      const newReactions = {
+        ...currentReactions,
+        [reactionType]: (currentReactions[reactionType] || 0) + 1,
+      };
+      
+      return base44.entities.CommunityPost.update(postId, { 
+        reactions: newReactions,
+        liked_by: [...likedBy, userId]
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['communityPosts'] });
+    },
+    onError: (error) => {
+      if (error.message === 'Already liked') {
+        // Could show a toast here
+        console.log('You already liked this post');
+      }
+    },
+  });
+
+  const handleReaction = (reactionType) => {
+    const userId = currentUser?.id;
+    if (!userId) {
+      console.log('User not logged in to react.');
+      return;
+    }
+    
+    const likedBy = post.liked_by || [];
+    if (likedBy.includes(userId)) {
+      console.log('User already liked this post.');
+      return; // Already liked
+    }
+    
+    updateReactionMutation.mutate({ postId: post.id, reactionType });
+  };
+
+  const hasUserLiked = () => {
+    const userId = currentUser?.id;
+    const likedBy = post.liked_by || [];
+    return userId && likedBy.includes(userId);
+  };
+
+  return (
+    <Card
+      className="glass-card rounded-3xl overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer"
+      onClick={() => setIsExpanded(!isExpanded)}
+    >
+      <div className="p-5 space-y-4">
+        {/* Header */}
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${categoryColors[post.category] || 'from-gray-400 to-blue-400'} flex items-center justify-center`}>
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <p className="font-semibold text-gray-900">
+                {post.anonymous_name || 'Anonymous Friend'}
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-600">
+                  {format(new Date(post.created_date), 'MMM d')}
+                </span>
+                <span className="text-xs">•</span>
+                <span className="text-xs text-gray-600 capitalize flex items-center gap-1">
+                  {categoryEmojis[post.category]} {post.category}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <p className={`text-gray-700 leading-relaxed ${isExpanded ? '' : 'line-clamp-3'}`}>
+          {post.content}
+        </p>
+
+        {/* Reactions */}
+        <div className="flex items-center gap-2 pt-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReaction('heart');
+            }}
+            disabled={hasUserLiked()}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full transition-colors ${
+              hasUserLiked() 
+                ? 'bg-gray-200 cursor-not-allowed' 
+                : 'bg-white/30 hover:bg-white/50'
+            }`}
+          >
+            <span className="text-lg">💜</span>
+            <span className="text-xs font-medium text-gray-700">
+              {post.reactions?.heart || 0}
+            </span>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReaction('flower');
+            }}
+            disabled={hasUserLiked()}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full transition-colors ${
+              hasUserLiked() 
+                ? 'bg-gray-200 cursor-not-allowed' 
+                : 'bg-white/30 hover:bg-white/50'
+            }`}
+          >
+            <span className="text-lg">🌼</span>
+            <span className="text-xs font-medium text-gray-700">
+              {post.reactions?.flower || 0}
+            </span>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReaction('sparkle');
+            }}
+            disabled={hasUserLiked()}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full transition-colors ${
+              hasUserLiked() 
+                ? 'bg-gray-200 cursor-not-allowed' 
+                : 'bg-white/30 hover:bg-white/50'
+            }`}
+          >
+            <span className="text-lg">✨</span>
+            <span className="text-xs font-medium text-gray-700">
+              {post.reactions?.sparkle || 0}
+            </span>
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleReaction('hug');
+            }}
+            disabled={hasUserLiked()}
+            className={`flex items-center gap-1 px-3 py-1.5 rounded-full transition-colors ${
+              hasUserLiked() 
+                ? 'bg-gray-200 cursor-not-allowed' 
+                : 'bg-white/30 hover:bg-white/50'
+            }`}
+          >
+            <span className="text-lg">🤗</span>
+            <span className="text-xs font-medium text-gray-700">
+              {post.reactions?.hug || 0}
+            </span>
+          </button>
+
+          {hasUserLiked() && (
+            <span className="text-xs text-gray-500 ml-2">Already reacted</span>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}

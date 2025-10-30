@@ -1,0 +1,30 @@
+import React from "react";
+import { Heart, Music, Wind } from "lucide-react";
+
+const actions = [
+  { id: 'affirmation', label: 'Affirmation', icon: Heart, color: 'from-pink-400 to-rose-400' },
+  { id: 'audio', label: 'Calm Audio', icon: Music, color: 'from-blue-400 to-cyan-400' },
+  { id: 'breathing', label: 'Breathe', icon: Wind, color: 'from-purple-400 to-pink-400' },
+];
+
+export default function QuickActions({ onActionSelect }) {
+  return (
+    <div className="px-4 py-3 border-t border-white/20">
+      <div className="max-w-lg mx-auto flex gap-3 overflow-x-auto pb-2">
+        {actions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <button
+              key={action.id}
+              onClick={() => onActionSelect(action.id)}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full bg-gradient-to-r ${action.color} text-white text-sm font-medium hover:shadow-lg transition-all duration-300 hover:scale-105`}
+            >
+              <Icon className="w-4 h-4" />
+              {action.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,68 @@
+{
+  "name": "Friendship",
+  "type": "object",
+  "properties": {
+    "user1_id": {
+      "type": "string"
+    },
+    "user1_name": {
+      "type": "string"
+    },
+    "user2_id": {
+      "type": "string"
+    },
+    "user2_name": {
+      "type": "string"
+    },
+    "match_id": {
+      "type": "string",
+      "description": "Original match that led to friendship"
+    }
+  },
+  "required": [
+    "user1_id",
+    "user2_id"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user1_id": "{{user.id}}"
+        },
+        {
+          "user2_id": "{{user.id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "user1_id": "{{user.id}}"
+        },
+        {
+          "user2_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user1_id": "{{user.id}}"
+        },
+        {
+          "user2_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "user1_id": "{{user.id}}"
+        },
+        {
+          "user2_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}

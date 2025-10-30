@@ -1,0 +1,337 @@
+import React, { useState, useEffect, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
+import { Send, UserPlus, Clock, ArrowLeft, Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+
+export default function MatchChat() {
+  const [message, setMessage] = useState("");
+  const [timeLeft, setTimeLeft] = useState(480); // 8 minutes in seconds
+  const [chatExpired, setChatExpired] = useState(false);
+  const messagesEndRef = useRef(null);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Get matchId from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const matchId = urlParams.get('matchId');
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: match, isLoading: matchLoading, error: matchError } = useQuery({
+    queryKey: ['match', matchId],
+    queryFn: async () => {
+      if (!matchId) return null;
+      
+      // Try to get the specific match
+      const allMatches = await base44.entities.MatchRequest.list();
+      const foundMatch = allMatches.find(m => m.id === matchId);
+      
+      if (!foundMatch) {
+        throw new Error("Match not found");
+      }
+      
+      return foundMatch;
+    },
+    enabled: !!matchId && !!currentUser,
+    retry: 3,
+    retryDelay: 1000,
+  });
+
+  const { data: messages, isLoading: messagesLoading } = useQuery({
+    queryKey: ['directMessages', matchId],
+    queryFn: () => base44.entities.DirectMessage.filter({ match_id: matchId }, "-created_date"),
+    initialData: [],
+    enabled: !!matchId && !!match,
+    refetchInterval: 2000, // Poll every 2 seconds
+  });
+
+  const sendMessageMutation = useMutation({
+    mutationFn: (messageData) => base44.entities.DirectMessage.create(messageData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['directMessages', matchId] });
+    },
+  });
+
+  const addFriendMutation = useMutation({
+    mutationFn: async () => {
+      const friendData = {
+        user1_id: currentUser.id,
+        user1_name: currentUser.full_name,
+        user2_id: otherUser.id,
+        user2_name: otherUser.full_name,
+        match_id: matchId,
+      };
+      await base44.entities.Friendship.create(friendData);
+      await base44.entities.MatchRequest.update(matchId, { is_friends: true });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['match', matchId] });
+      alert("Friend added! You can now chat anytime from the Chat section.");
+    },
+  });
+
+  // Timer countdown
+  useEffect(() => {
+    if (!match || chatExpired || match.is_friends) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          setChatExpired(true);
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [match, chatExpired]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Handle errors
+  useEffect(() => {
+    if (matchError) {
+      console.error("Match error:", matchError);
+      setTimeout(() => {
+        navigate(createPageUrl("Home"));
+      }, 3000);
+    }
+  }, [matchError]);
+
+  if (!matchId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="glass-card rounded-3xl p-8 text-center max-w-md">
+          <div className="text-6xl mb-4">❌</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">No Match Found</h2>
+          <p className="text-gray-600 mb-6">
+            This chat session doesn't exist or has expired.
+          </p>
+          <Button
+            onClick={() => navigate(createPageUrl("Home"))}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl"
+          >
+            Back to Home
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (matchLoading || !match) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 mx-auto text-purple-500 animate-spin mb-4" />
+          <p className="text-gray-600">Loading your chat...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (matchError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6">
+        <Card className="glass-card rounded-3xl p-8 text-center max-w-md">
+          <div className="text-6xl mb-4">😔</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Chat Not Available</h2>
+          <p className="text-gray-600 mb-6">
+            This chat session could not be loaded. Redirecting you home...
+          </p>
+        </Card>
+      </div>
+    );
+  }
+
+  const otherUser = match.requester_id === currentUser?.id 
+    ? { id: match.receiver_id, name: match.receiver_name }
+    : { id: match.requester_id, name: match.requester_name };
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || chatExpired) return;
+
+    await sendMessageMutation.mutateAsync({
+      match_id: matchId,
+      sender_id: currentUser.id,
+      sender_name: currentUser.full_name,
+      receiver_id: otherUser.id,
+      content: message,
+    });
+
+    setMessage("");
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div className="flex flex-col h-screen">
+      {/* Header */}
+      <div className="glass-card border-b border-white/30 px-6 py-4">
+        <div className="max-w-lg mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate(createPageUrl("Home"))}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            
+            <div className="text-center flex-1">
+              <h1 className="font-semibold text-gray-900">
+                {otherUser.name?.split(' ')[0]}
+              </h1>
+              <p className="text-xs text-gray-600">Soul Connection</p>
+            </div>
+
+            {!match.is_friends && !chatExpired && (
+              <Button
+                size="icon"
+                onClick={() => addFriendMutation.mutate()}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white"
+              >
+                <UserPlus className="w-5 h-5" />
+              </Button>
+            )}
+          </div>
+
+          {/* Timer */}
+          {!match.is_friends && (
+            <div className={`flex items-center justify-center gap-2 px-4 py-2 rounded-full ${
+              chatExpired 
+                ? 'bg-red-100 border border-red-200' 
+                : timeLeft < 120 
+                  ? 'bg-orange-100 border border-orange-200'
+                  : 'bg-blue-100 border border-blue-200'
+            }`}>
+              <Clock className={`w-4 h-4 ${
+                chatExpired ? 'text-red-600' : timeLeft < 120 ? 'text-orange-600' : 'text-blue-600'
+              }`} />
+              <span className={`text-sm font-medium ${
+                chatExpired ? 'text-red-700' : timeLeft < 120 ? 'text-orange-700' : 'text-blue-700'
+              }`}>
+                {chatExpired ? 'Chat Expired' : `Time left: ${formatTime(timeLeft)}`}
+              </span>
+            </div>
+          )}
+
+          {match.is_friends && (
+            <div className="bg-green-100 border border-green-200 rounded-full px-4 py-2 text-center">
+              <span className="text-sm font-medium text-green-700">
+                ✓ Friends • No time limit
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-6">
+        <div className="max-w-lg mx-auto space-y-4">
+          {messages.length === 0 && !messagesLoading && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">💬</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Start Your Conversation
+              </h3>
+              <p className="text-gray-600">
+                You've got 8mins of a fully safe space to connect, don't be too cautious but be respectful!
+              </p>
+            </div>
+          )}
+
+          {[...messages].reverse().map((msg) => {
+            const isCurrentUser = msg.sender_id === currentUser?.id;
+            
+            return (
+              <div key={msg.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[75%] ${isCurrentUser ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+                  <div
+                    className={`rounded-3xl px-5 py-4 ${
+                      isCurrentUser
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-br-sm'
+                        : 'glass-card text-gray-900 rounded-bl-sm'
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                      {msg.content}
+                    </p>
+                  </div>
+                  <span className="text-xs text-gray-500 px-2">
+                    {format(new Date(msg.created_date), 'h:mm a')}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+
+          {chatExpired && !match.is_friends && (
+            <Card className="glass-card rounded-3xl p-6 text-center border-2 border-purple-200/50">
+              <div className="text-5xl mb-3">⏰</div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Time's Up!
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Your 8-minute chat has ended. Hope you had a meaningful conversation!
+              </p>
+              <Button
+                onClick={() => navigate(createPageUrl("Home"))}
+                className="bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl"
+              >
+                Back to Home
+              </Button>
+            </Card>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Input */}
+      {(!chatExpired || match.is_friends) && (
+        <div className="glass-nav border-t border-white/30 px-4 py-4">
+          <div className="max-w-lg mx-auto">
+            <div className="flex items-center gap-3">
+              <div className="flex-1 glass-card rounded-3xl px-5 py-3 flex items-center gap-3">
+                <Input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type your message..."
+                  className="bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                />
+              </div>
+              
+              <Button
+                size="icon"
+                onClick={handleSendMessage}
+                disabled={!message.trim()}
+                className="rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex-shrink-0"
+              >
+                <Send className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

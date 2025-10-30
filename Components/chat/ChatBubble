@@ -1,0 +1,45 @@
+import React from "react";
+import { Sparkles } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+
+export default function ChatBubble({ message }) {
+  const isUser = message.role === "user";
+  const isAssistant = message.role === "assistant";
+
+  return (
+    <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+      {!isUser && (
+        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center flex-shrink-0">
+          <Sparkles className="w-4 h-4 text-white" />
+        </div>
+      )}
+      
+      <div className={`max-w-[75%] space-y-2`}>
+        <div
+          className={`rounded-3xl px-5 py-4 ${
+            isUser
+              ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-tr-sm'
+              : 'glass-card text-gray-900 rounded-tl-sm'
+          }`}
+        >
+          {isUser ? (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              {message.content}
+            </p>
+          ) : (
+            <ReactMarkdown 
+              className="text-sm prose prose-sm max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0"
+              components={{
+                p: ({ children }) => <p className="leading-relaxed mb-2 last:mb-0">{children}</p>,
+                strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                em: ({ children }) => <em className="italic">{children}</em>,
+              }}
+            >
+              {message.content}
+            </ReactMarkdown>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

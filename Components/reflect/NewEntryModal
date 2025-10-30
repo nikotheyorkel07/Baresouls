@@ -1,0 +1,142 @@
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Sparkles } from "lucide-react";
+import MoodSlider from "./MoodSlider";
+
+const moodMap = ['very_sad', 'sad', 'down', 'okay', 'good', 'happy', 'great', 'amazing', 'joyful', 'ecstatic'];
+
+export default function NewEntryModal({ isOpen, onClose, onSave, initialMood }) {
+  const [formData, setFormData] = useState({
+    mood: initialMood || 'good',
+    mood_value: 5,
+    intensity: 3,
+    title: '',
+    content: '',
+    gratitude: '',
+    tags: [],
+    reflection_type: 'daily_check_in',
+  });
+
+  const handleSubmit = async () => {
+    await onSave({
+      ...formData,
+      mood: moodMap[formData.mood_value] || 'good',
+    });
+    setFormData({
+      mood: 'good',
+      mood_value: 5,
+      intensity: 3,
+      title: '',
+      content: '',
+      gratitude: '',
+      tags: [],
+      reflection_type: 'daily_check_in',
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="glass-card border-2 border-white/30 max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-2xl">
+            <Sparkles className="w-6 h-6 text-purple-500" />
+            New Reflection
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Mood Slider */}
+          <MoodSlider
+            value={formData.mood_value}
+            onChange={(val) => setFormData({ ...formData, mood_value: val })}
+          />
+
+          {/* Intensity */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-3">
+              Intensity Level: {formData.intensity}/5
+            </label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, intensity: level })}
+                  className={`flex-1 h-3 rounded-full transition-all ${
+                    level <= formData.intensity
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500'
+                      : 'bg-gray-200'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Title */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Title (optional)
+            </label>
+            <Input
+              value={formData.title}
+              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              placeholder="Give your reflection a title..."
+              className="glass-card border-white/30"
+            />
+          </div>
+
+          {/* Content */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Your thoughts
+            </label>
+            <Textarea
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              placeholder="What's on your mind?..."
+              className="glass-card border-white/30 min-h-32"
+            />
+          </div>
+
+          {/* Gratitude */}
+          <div>
+            <label className="block text-sm font-medium text-gray-900 mb-2">
+              Something you're grateful for
+            </label>
+            <Input
+              value={formData.gratitude}
+              onChange={(e) => setFormData({ ...formData, gratitude: e.target.value })}
+              placeholder="I'm grateful for..."
+              className="glass-card border-white/30"
+            />
+          </div>
+
+          {/* Actions */}
+          <div className="flex gap-3 pt-4">
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 py-6 rounded-2xl"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-6 rounded-2xl"
+            >
+              Save Reflection
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,0 +1,48 @@
+import React from "react";
+import { Slider } from "@/components/ui/slider";
+
+const moodPoints = [
+  { value: 0, label: 'Very Sad', emoji: '😢', color: 'from-blue-600 to-indigo-600' },
+  { value: 1, label: 'Sad', emoji: '😔', color: 'from-blue-500 to-indigo-500' },
+  { value: 2, label: 'Down', emoji: '😕', color: 'from-blue-400 to-purple-400' },
+  { value: 3, label: 'Okay', emoji: '😐', color: 'from-gray-400 to-gray-500' },
+  { value: 4, label: 'Good', emoji: '🙂', color: 'from-teal-400 to-green-400' },
+  { value: 5, label: 'Happy', emoji: '😊', color: 'from-green-400 to-emerald-400' },
+  { value: 6, label: 'Great', emoji: '😄', color: 'from-yellow-400 to-orange-400' },
+  { value: 7, label: 'Amazing', emoji: '🤩', color: 'from-orange-400 to-pink-400' },
+  { value: 8, label: 'Joyful', emoji: '😁', color: 'from-pink-400 to-rose-400' },
+  { value: 9, label: 'Ecstatic', emoji: '🥳', color: 'from-rose-400 to-red-400' },
+];
+
+export default function MoodSlider({ value, onChange }) {
+  const currentMood = moodPoints[value] || moodPoints[5];
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <div className={`w-32 h-32 mx-auto rounded-full bg-gradient-to-br ${currentMood.color} flex items-center justify-center mb-4 transition-all duration-300 animate-float shadow-lg`}>
+          <span className="text-6xl">{currentMood.emoji}</span>
+        </div>
+        <h3 className="text-2xl font-bold text-gray-900 mb-1">
+          {currentMood.label}
+        </h3>
+        <p className="text-gray-600">How are you feeling right now?</p>
+      </div>
+
+      <div className="px-4">
+        <Slider
+          value={[value]}
+          onValueChange={(vals) => onChange(vals[0])}
+          max={9}
+          step={1}
+          className="w-full"
+        />
+        <div className="flex justify-between mt-2 text-xs text-gray-500">
+          <span>Very Sad</span>
+          <span>Neutral</span>
+          <span>Ecstatic</span>
+        </div>
+      </div>
+    </div>
+  );
+}

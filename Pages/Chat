@@ -1,0 +1,241 @@
+import React, { useState, useEffect, useRef } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Send, Plus, Sparkles, Wind, Users } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ChatBubble from "../components/chat/ChatBubble";
+import QuickActions from "../components/chat/QuickActions";
+import BreathingModal from "../components/chat/BreathingModal";
+import FriendsList from "../components/chat/FriendsList";
+import SuggestedPrompts from "../components/chat/SuggestedPrompts";
+
+export default function Chat() {
+  const [message, setMessage] = useState("");
+  const [conversationId, setConversationId] = useState(null);
+  const [conversation, setConversation] = useState(null);
+  const [showBreathing, setShowBreathing] = useState(false);
+  const [showPrompts, setShowPrompts] = useState(false);
+  const [activeTab, setActiveTab] = useState("ai");
+  const messagesEndRef = useRef(null);
+  const queryClient = useQueryClient();
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: friendships } = useQuery({
+    queryKey: ['friendships'],
+    queryFn: async () => {
+      const allFriendships = await base44.entities.Friendship.list();
+      return allFriendships.filter(f => 
+        f.user1_id === user?.id || f.user2_id === user?.id
+      );
+    },
+    initialData: [],
+    enabled: activeTab === "friends" && !!user,
+  });
+
+  useEffect(() => {
+    const initConversation = async () => {
+      if (activeTab === "ai" && !conversationId) {
+        const newConversation = await base44.agents.createConversation({
+          agent_name: "luna",
+          metadata: {
+            name: "Chat with Luna",
+            description: "Wellness companion conversation"
+          }
+        });
+        setConversationId(newConversation.id);
+        setConversation(newConversation);
+      }
+    };
+
+    initConversation();
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const unsubscribe = base44.agents.subscribeToConversation(conversationId, (data) => {
+      setConversation(data);
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, [conversationId]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [conversation?.messages]);
+
+  const handleSendMessage = async () => {
+    if (!message.trim() || !conversation) return;
+
+    const messageContent = message;
+    setMessage("");
+
+    await base44.agents.addMessage(conversation, {
+      role: "user",
+      content: messageContent
+    });
+  };
+
+  const handleQuickAction = async (action) => {
+    if (action === 'breathing') {
+      setShowBreathing(true);
+      return;
+    }
+
+    const actions = {
+      affirmation: "Can you share a positive affirmation with me?",
+      audio: "I'd like some suggestions for calming activities",
+      grounding: "Can you guide me through a grounding exercise?",
+    };
+
+    setMessage(actions[action] || "");
+    setTimeout(() => handleSendMessage(), 100);
+  };
+
+  const messages = conversation?.messages || [];
+
+  return (
+    <div className="flex flex-col h-screen relative">
+      {/* Header */}
+      <div className="glass-card border-b border-white/30 px-6 py-4 relative z-10">
+        <div className="max-w-lg mx-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full grid grid-cols-2 bg-white/30">
+              <TabsTrigger value="ai" className="rounded-xl">
+                <Sparkles className="w-4 h-4 mr-2" />
+                Luna
+              </TabsTrigger>
+              <TabsTrigger value="friends" className="rounded-xl">
+                <Users className="w-4 h-4 mr-2" />
+                Friends ({friendships.length})
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      </div>
+
+      {activeTab === "ai" ? (
+        <>
+          {/* AI Chat Header */}
+          <div className="glass-card border-b border-white/30 px-6 py-3">
+            <div className="max-w-lg mx-auto flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center animate-pulse-glow">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white animate-pulse"></div>
+                </div>
+                <div>
+                  <h2 className="font-semibold text-gray-900 text-sm">Luna</h2>
+                  <p className="text-xs text-gray-600">Your SoulBuddy</p>
+                </div>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={() => setShowBreathing(true)}
+              >
+                <Wind className="w-5 h-5 text-purple-500" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto px-4 py-6">
+            <div className="max-w-lg mx-auto space-y-4">
+              {messages.length === 0 && (
+                <div className="text-center py-12 space-y-4">
+                  <div className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center animate-float">
+                    <Sparkles className="w-10 h-10 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-2">
+                      Hey, I'm Luna 🌸
+                    </h2>
+                    <p className="text-gray-600">
+                      Your emotionally intelligent companion.
+                      Share anything on your mind—I'm here to listen 💜
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {messages.map((msg, index) => (
+                <ChatBubble key={index} message={msg} />
+              ))}
+
+              <div ref={messagesEndRef} />
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <QuickActions onActionSelect={handleQuickAction} />
+
+          {/* Suggested Prompts Overlay */}
+          {showPrompts && (
+            <SuggestedPrompts
+              onSelect={setMessage}
+              onClose={() => setShowPrompts(false)}
+            />
+          )}
+
+          {/* Input */}
+          <div className="glass-nav border-t border-white/30 px-4 py-4">
+            <div className="max-w-lg mx-auto">
+              <div className="flex items-center gap-3">
+                <Button
+                  size="icon"
+                  className="rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white flex-shrink-0"
+                  onClick={() => setShowPrompts(!showPrompts)}
+                >
+                  <Plus className="w-5 h-5" />
+                </Button>
+                
+                <div className="flex-1 glass-card rounded-3xl px-5 py-3 flex items-center gap-3">
+                  <Input
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                    placeholder="Type your message..."
+                    className="bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
+                
+                <Button
+                  size="icon"
+                  onClick={handleSendMessage}
+                  disabled={!message.trim()}
+                  className="rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white flex-shrink-0"
+                >
+                  <Send className="w-5 h-5" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        <FriendsList friendships={friendships} currentUserId={user?.id} />
+      )}
+
+      <BreathingModal 
+        isOpen={showBreathing} 
+        onClose={() => setShowBreathing(false)} 
+      />
+    </div>
+  );
+}

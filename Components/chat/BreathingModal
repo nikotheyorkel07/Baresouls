@@ -1,0 +1,158 @@
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Wind } from "lucide-react";
+
+export default function BreathingModal({ isOpen, onClose }) {
+  const [phase, setPhase] = useState("ready"); // ready, inhale, hold, exhale
+  const [count, setCount] = useState(0);
+  const [isActive, setIsActive] = useState(false);
+
+  const phaseDurations = {
+    inhale: 4,
+    hold: 4,
+    exhale: 6,
+  };
+
+  useEffect(() => {
+    if (!isActive || phase === "ready") return;
+
+    const timer = setInterval(() => {
+      setCount((prev) => {
+        if (prev >= phaseDurations[phase]) {
+          // Move to next phase
+          if (phase === "inhale") {
+            setPhase("hold");
+            return 0;
+          } else if (phase === "hold") {
+            setPhase("exhale");
+            return 0;
+          } else {
+            setPhase("inhale");
+            return 0;
+          }
+        }
+        return prev + 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isActive, phase, count]);
+
+  const handleStart = () => {
+    setIsActive(true);
+    setPhase("inhale");
+    setCount(0);
+  };
+
+  const handleStop = () => {
+    setIsActive(false);
+    setPhase("ready");
+    setCount(0);
+  };
+
+  const getPhaseText = () => {
+    if (phase === "ready") return "Ready to breathe?";
+    if (phase === "inhale") return "Breathe In";
+    if (phase === "hold") return "Hold";
+    return "Breathe Out";
+  };
+
+  const getPhaseColor = () => {
+    if (phase === "inhale") return "from-blue-400 to-cyan-400";
+    if (phase === "hold") return "from-purple-400 to-pink-400";
+    if (phase === "exhale") return "from-green-400 to-teal-400";
+    return "from-purple-400 to-pink-400";
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="glass-card border-2 border-white/30 max-w-sm">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-xl">
+            <Wind className="w-6 h-6 text-purple-500" />
+            Breathing Exercise
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-6 py-6">
+          {/* Breathing Circle */}
+          <div className="relative w-48 h-48 mx-auto">
+            <div
+              className={`absolute inset-0 rounded-full bg-gradient-to-br ${getPhaseColor()} transition-all duration-1000 ${
+                isActive
+                  ? phase === "inhale"
+                    ? "scale-100 opacity-100"
+                    : phase === "hold"
+                    ? "scale-100 opacity-100"
+                    : "scale-75 opacity-60"
+                  : "scale-75 opacity-40"
+              }`}
+              style={{
+                boxShadow: isActive ? "0 0 60px rgba(138, 79, 255, 0.6)" : "none",
+              }}
+            />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-white text-2xl font-bold mb-2">
+                  {getPhaseText()}
+                </p>
+                {isActive && phase !== "ready" && (
+                  <p className="text-white text-5xl font-bold">
+                    {phaseDurations[phase] - count}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="text-center space-y-2">
+            <p className="text-gray-700 font-medium">
+              {!isActive
+                ? "Find a comfortable position and relax"
+                : phase === "inhale"
+                ? "Breathe in slowly through your nose"
+                : phase === "hold"
+                ? "Hold your breath gently"
+                : "Breathe out slowly through your mouth"}
+            </p>
+          </div>
+
+          {/* Controls */}
+          <div className="flex gap-3">
+            {!isActive ? (
+              <Button
+                onClick={handleStart}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-6 rounded-2xl text-lg font-semibold"
+              >
+                Start
+              </Button>
+            ) : (
+              <>
+                <Button
+                  onClick={handleStop}
+                  variant="outline"
+                  className="flex-1 py-6 rounded-2xl"
+                >
+                  Stop
+                </Button>
+                <Button
+                  onClick={onClose}
+                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-6 rounded-2xl"
+                >
+                  Done
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -1,0 +1,264 @@
+import React, { useState } from "react";
+import { base44 } from "@/api/base44Client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { 
+  User, Moon, Bell, Lock, Download, HelpCircle, 
+  Palette, ChevronRight, LogOut, Phone, Edit 
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import AvatarDisplay from "../components/profile/AvatarDisplay";
+import AvatarSelector from "../components/profile/AvatarSelector";
+
+export default function Profile() {
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  const { data: user } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: (userData) => base44.auth.updateMe(userData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['currentUser'] });
+    },
+  });
+
+  const handleToggle = async (field, value) => {
+    await updateUserMutation.mutateAsync({ [field]: value });
+  };
+
+  const handleLogout = async () => {
+    queryClient.clear();
+    await base44.auth.logout();
+  };
+
+  const handleEmergencyCall = () => {
+    window.location.href = 'tel:02227546669';
+  };
+
+  const handleEmergencyEmail = () => {
+    window.location.href = 'mailto:aasrahelpline@yahoo.com?subject=Emergency Support Request';
+  };
+
+  return (
+    <div className="min-h-screen p-6 pt-8">
+      <div className="max-w-lg mx-auto space-y-6">
+        {/* Profile Header */}
+        <div className="text-center space-y-4">
+          <div className="relative inline-block">
+            <AvatarDisplay 
+              user={user} 
+              size="xlarge" 
+              onAvatarClick={() => setShowAvatarSelector(true)}
+            />
+            <button
+              onClick={() => setShowAvatarSelector(true)}
+              className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white shadow-lg hover:scale-110 transition-transform"
+            >
+              <Edit className="w-5 h-5" />
+            </button>
+            <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white px-4 py-1 rounded-full shadow-lg">
+              <span className="text-sm font-medium text-gray-900">
+                {user?.days_active || 0} days
+              </span>
+            </div>
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {user?.full_name || 'User'}
+            </h1>
+            <p className="text-gray-600">{user?.email}</p>
+          </div>
+        </div>
+
+        {/* Emergency Support */}
+        <Card className="glass-card rounded-3xl overflow-hidden border-2 border-red-200/50">
+          <div className="p-5 space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-red-500 flex items-center justify-center">
+                <Phone className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900">Emergency Support</h3>
+                <p className="text-sm text-gray-600">24/7 crisis helpline</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleEmergencyCall}
+              className="w-full bg-gradient-to-r from-red-500 to-pink-500 text-white font-semibold py-3 rounded-2xl hover:shadow-lg transition-all duration-300"
+            >
+              Call Crisis Hotline
+            </button>
+            
+            <button 
+              onClick={handleEmergencyEmail}
+              className="w-full bg-white/30 backdrop-blur-sm text-gray-900 font-medium py-2.5 rounded-2xl border border-gray-200/50"
+            >
+              Email Support
+            </button>
+          </div>
+        </Card>
+
+        {/* Settings */}
+        <Card className="glass-card rounded-3xl overflow-hidden">
+          <div className="p-5">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Settings</h2>
+            
+            <div className="space-y-3">
+              <button 
+                onClick={() => navigate(createPageUrl("ThemeSettings"))}
+                className="w-full flex items-center justify-between p-4 bg-white/20 rounded-2xl hover:bg-white/30 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <Palette className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <span className="font-medium text-gray-900">Theme & Appearance</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <button 
+                onClick={() => navigate(createPageUrl("NotificationSettings"))}
+                className="w-full flex items-center justify-between p-4 bg-white/20 rounded-2xl hover:bg-white/30 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <Bell className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <span className="font-medium text-gray-900">Notifications</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <button 
+                onClick={() => navigate(createPageUrl("PrivacySettings"))}
+                className="w-full flex items-center justify-between p-4 bg-white/20 rounded-2xl hover:bg-white/30 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-yellow-600" />
+                  </div>
+                  <span className="font-medium text-gray-900">Privacy & Security</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <button 
+                onClick={() => navigate(createPageUrl("ExportData"))}
+                className="w-full flex items-center justify-between p-4 bg-white/20 rounded-2xl hover:bg-white/30 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
+                    <Download className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <span className="font-medium text-gray-900">Export Data</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+
+              <button 
+                onClick={() => navigate(createPageUrl("HelpSupport"))}
+                className="w-full flex items-center justify-between p-4 bg-white/20 rounded-2xl hover:bg-white/30 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
+                    <HelpCircle className="w-5 h-5 text-teal-600" />
+                  </div>
+                  <span className="font-medium text-gray-900">Help & Support</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-gray-400" />
+              </button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Safe Space Controls */}
+        <Card className="glass-card rounded-3xl overflow-hidden">
+          <div className="p-5">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Safe Space Controls</h2>
+            
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-white/20 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                    <Moon className="w-5 h-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Quiet Mode</p>
+                    <p className="text-sm text-gray-600">Reduce notifications</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={user?.quiet_mode || false}
+                  onCheckedChange={(checked) => handleToggle('quiet_mode', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-white/20 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
+                    <span className="text-lg">🛡️</span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Content Filter</p>
+                    <p className="text-sm text-gray-600">AI-assisted filtering</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={user?.content_filter !== false}
+                  onCheckedChange={(checked) => handleToggle('content_filter', checked)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-white/20 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Anonymous Mode</p>
+                    <p className="text-sm text-gray-600">Hide your identity</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={user?.anonymous_mode !== false}
+                  onCheckedChange={(checked) => handleToggle('anonymous_mode', checked)}
+                />
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Logout */}
+        <Button
+          variant="outline"
+          onClick={handleLogout}
+          className="w-full py-6 rounded-3xl border-2 text-red-600 hover:bg-red-50"
+        >
+          <LogOut className="w-5 h-5 mr-2" />
+          Sign Out
+        </Button>
+
+        {/* App Version */}
+        <p className="text-center text-sm text-gray-500">
+          BareSouls v1.0.0 • Made with 💜
+        </p>
+      </div>
+
+      <AvatarSelector
+        isOpen={showAvatarSelector}
+        onClose={() => setShowAvatarSelector(false)}
+        currentAvatarId={user?.avatar_id}
+      />
+    </div>
+  );
+}
