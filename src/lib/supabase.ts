@@ -1,48 +1,128 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://azyjwwoagqbdkqitthtt.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6eWp3d29hZ3FiZGtxaXR0aHR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA5MTE3OTUsImV4cCI6MjA3NjQ4Nzc5NX0.3s_FDJ-SxsIZdJlBgvbblpsUU6p-cdV1Oja4fDVZfnY';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+}
 
-// Create a wrapper to maintain compatibility with existing base44 interface
-export const base44 = {
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    me: async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-      if (error) throw error;
-      
-      // Get user settings from the profiles table
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('wellness_theme, is_dark_mode')
-        .eq('id', user?.id)
-        .single();
-      
-      if (profileError) throw profileError;
-      
-      return {
-        wellness_theme: profile?.wellness_theme,
-        is_dark_mode: profile?.is_dark_mode
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true,
+  },
+});
+
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: {
+          id: string;
+          username: string | null;
+          display_name: string | null;
+          full_name: string | null;
+          avatar_url: string | null;
+          anonymized: boolean;
+          wellness_theme: string | null;
+          is_dark_mode: boolean;
+          is_first_time: boolean;
+          days_active: number;
+          reflections_count: number;
+          support_given: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          username?: string | null;
+          display_name?: string | null;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          anonymized?: boolean;
+          wellness_theme?: string | null;
+          is_dark_mode?: boolean;
+          is_first_time?: boolean;
+          days_active?: number;
+          reflections_count?: number;
+          support_given?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          username?: string | null;
+          display_name?: string | null;
+          full_name?: string | null;
+          avatar_url?: string | null;
+          anonymized?: boolean;
+          wellness_theme?: string | null;
+          is_dark_mode?: boolean;
+          is_first_time?: boolean;
+          days_active?: number;
+          reflections_count?: number;
+          support_given?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
       };
-    },
-    updateMe: async (data: { wellness_theme?: string; is_dark_mode?: boolean }) => {
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .update({
-          wellness_theme: data.wellness_theme,
-          is_dark_mode: data.is_dark_mode,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', user?.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return profile;
-    }
-  }
+      reflections: {
+        Row: {
+          id: string;
+          user_id: string;
+          emotion: string;
+          intensity: number;
+          title: string | null;
+          body: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          emotion: string;
+          intensity: number;
+          title?: string | null;
+          body: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          emotion?: string;
+          intensity?: number;
+          title?: string | null;
+          body?: string;
+          created_at?: string;
+        };
+      };
+      posts: {
+        Row: {
+          id: string;
+          user_id: string;
+          category: string;
+          content: string;
+          reactions: Record<string, number>;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          category: string;
+          content: string;
+          reactions?: Record<string, number>;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          category?: string;
+          content?: string;
+          reactions?: Record<string, number>;
+          created_at?: string;
+        };
+      };
+    };
+  };
 };
